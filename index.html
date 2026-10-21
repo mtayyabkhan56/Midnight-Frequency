@@ -1,0 +1,813 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#050508">
+<title>Midnight Frequency</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#050508;
+  --panel:rgba(15,15,22,.72);
+  --line:rgba(255,255,255,.09);
+  --text:#f5f3fa;
+  --muted:#777583;
+  --purple:#a879ff;
+  --cyan:#54eaff;
+}
+body{
+  min-height:100vh;
+  overflow:hidden;
+  color:var(--text);
+  background:
+    radial-gradient(circle at 15% 15%,rgba(135,72,255,.16),transparent 28%),
+    radial-gradient(circle at 85% 85%,rgba(0,210,255,.10),transparent 30%),
+    #050508;
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+body:before{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  opacity:.035;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+.glow{
+  position:fixed;
+  width:420px;height:420px;
+  border-radius:50%;
+  filter:blur(110px);
+  opacity:.12;
+  pointer-events:none;
+}
+.glow.one{background:#8b4dff;top:-220px;left:-150px}
+.glow.two{background:#00d9ff;right:-190px;bottom:-220px}
+
+header{
+  height:76px;
+  padding:0 5vw;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  border-bottom:1px solid var(--line);
+  background:rgba(5,5,8,.65);
+  backdrop-filter:blur(20px);
+  position:relative;
+  z-index:10;
+}
+.logo{
+  font-size:11px;
+  letter-spacing:.25em;
+  color:#96939f;
+}
+.logo b{color:white}
+.logo i{
+  display:inline-block;
+  width:7px;height:7px;
+  margin-right:8px;
+  border-radius:50%;
+  background:var(--purple);
+  box-shadow:0 0 18px var(--purple);
+}
+.queue-btn{
+  border:1px solid var(--line);
+  background:#ffffff08;
+  color:#bdbac5;
+  border-radius:30px;
+  padding:10px 15px;
+  font-size:9px;
+  letter-spacing:.18em;
+  cursor:pointer;
+}
+main{
+  width:min(720px,90vw);
+  margin:auto;
+  text-align:center;
+  padding-top:2vh;
+}
+.visual{
+  height:330px;
+  position:relative;
+  display:grid;
+  place-items:center;
+}
+.orbit{
+  position:absolute;
+  border:1px solid rgba(255,255,255,.07);
+  border-radius:50%;
+}
+.orbit.a{
+  width:270px;height:270px;
+  animation:spin 20s linear infinite;
+}
+.orbit.b{
+  width:325px;height:325px;
+  border-style:dashed;
+  animation:spin 28s linear infinite reverse;
+}
+.orbit.c{
+  width:215px;height:215px;
+  border-color:#a879ff22;
+  animation:spin 12s linear infinite;
+}
+.disc{
+  width:205px;height:205px;
+  border-radius:50%;
+  position:relative;
+  background:
+    radial-gradient(circle at 34% 27%,#fff 0 3%,#d5c5ff 5%,#7145bd 19%,#241536 43%,#0c0a10 68%,#030305 70%);
+  box-shadow:0 0 45px #9b67ff55,0 0 120px #9b67ff20;
+  transition:.4s;
+}
+.disc.playing{animation:float 4s ease-in-out infinite,spin 18s linear infinite}
+.disc:after{
+  content:"";
+  position:absolute;
+  inset:15px;
+  border:1px solid #ffffff20;
+  border-radius:50%;
+  box-shadow:inset 0 0 30px #000;
+}
+.label{
+  position:absolute;
+  inset:77px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:#09080d;
+  border:1px solid #ffffff20;
+  color:#b991ff;
+  font-size:10px;
+  letter-spacing:.2em;
+  z-index:2;
+}
+.equalizer{
+  position:absolute;
+  bottom:2px;
+  display:flex;
+  align-items:end;
+  gap:4px;
+  height:40px;
+}
+.equalizer span{
+  width:3px;
+  height:6px;
+  border-radius:4px;
+  background:var(--purple);
+  opacity:.75;
+}
+.playing~.equalizer span{animation:eq .55s ease-in-out infinite alternate}
+.equalizer span:nth-child(2n){animation-delay:.1s}
+.equalizer span:nth-child(3n){animation-delay:.2s}
+
+.status{
+  font-size:9px;
+  letter-spacing:.32em;
+  color:#777582;
+}
+h1{
+  margin:14px 0 9px;
+  font-size:clamp(40px,7vw,68px);
+  line-height:.94;
+  letter-spacing:-.055em;
+}
+.artist{color:#85828e}
+.seek{margin:43px 0 22px}
+.times{
+  display:flex;
+  justify-content:space-between;
+  color:#62606b;
+  font:10px monospace;
+  margin-bottom:9px;
+}
+input[type=range]{
+  width:100%;
+  height:3px;
+  appearance:none;
+  background:#ffffff12;
+  border-radius:20px;
+  outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  appearance:none;
+  width:12px;height:12px;
+  border-radius:50%;
+  background:#f4f1fa;
+  box-shadow:0 0 16px #ae7cff;
+  cursor:pointer;
+}
+.controls{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:20px;
+}
+.controls button{
+  border:0;
+  background:none;
+  color:#d0ccd8;
+  cursor:pointer;
+  font-size:20px;
+  transition:.2s;
+}
+.controls button:hover{
+  color:white;
+  transform:scale(1.12);
+}
+.controls .small{
+  color:#676570;
+  font-size:14px;
+}
+.controls .active{color:var(--purple)}
+.play{
+  width:68px;height:68px;
+  border-radius:50%;
+  background:#f4f2f7!important;
+  color:#07070a!important;
+  box-shadow:0 10px 40px #a879ff2e;
+  font-size:21px!important;
+}
+.volume{
+  width:190px;
+  margin:28px auto 0;
+  display:flex;
+  gap:11px;
+  align-items:center;
+  color:#66636e;
+}
+.hints{
+  margin-top:25px;
+  color:#4f4d57;
+  font:8px monospace;
+  letter-spacing:.12em;
+}
+
+.queue{
+  position:fixed;
+  z-index:30;
+  right:0;top:0;
+  width:min(400px,92vw);
+  height:100vh;
+  padding:30px;
+  background:rgba(9,9,14,.94);
+  backdrop-filter:blur(30px);
+  border-left:1px solid var(--line);
+  transform:translateX(105%);
+  transition:.35s;
+  overflow:auto;
+}
+.queue.open{transform:translateX(0)}
+.queue-head{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:22px;
+}
+.queue small{
+  font-size:8px;
+  letter-spacing:.3em;
+  color:#777582;
+}
+.queue h2{font-size:32px;margin-top:7px}
+.close{
+  border:0;
+  background:none;
+  color:#aaa;
+  font-size:30px;
+  cursor:pointer;
+}
+.track{
+  display:flex;
+  align-items:center;
+  gap:13px;
+  padding:14px 11px;
+  border:1px solid transparent;
+  border-radius:15px;
+  cursor:pointer;
+}
+.track:hover,.track.active{
+  background:#ffffff08;
+  border-color:var(--line);
+}
+.cover{
+  width:45px;height:45px;
+  display:grid;
+  place-items:center;
+  border-radius:12px;
+  background:linear-gradient(135deg,#be99ff,#211534 58%,#15d9ff);
+  box-shadow:0 8px 22px #0009;
+}
+.track-info{text-align:left;flex:1;min-width:0}
+.track-title{
+  font-size:13px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.track-artist{
+  margin-top:4px;
+  font-size:10px;
+  color:#696772;
+}
+.track-num{
+  color:#55535e;
+  font:9px monospace;
+}
+.note{
+  margin-top:25px;
+  padding:16px;
+  border:1px dashed var(--line);
+  border-radius:15px;
+  color:#77747f;
+  font-size:10px;
+  line-height:1.7;
+}
+.note b{color:#c6c2ce}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes float{50%{transform:translateY(-8px)}}
+@keyframes eq{to{height:38px}}
+
+@media(max-width:600px){
+  header{padding:0 18px}
+  .visual{height:285px}
+  .disc{width:170px;height:170px}
+  .label{inset:63px}
+  .orbit.a{width:235px;height:235px}
+  .orbit.b{width:285px;height:285px}
+  .orbit.c{width:190px;height:190px}
+  h1{font-size:42px}
+  .controls{gap:13px}
+}
+</style>
+</head>
+
+<body>
+
+<div class="glow one"></div>
+<div class="glow two"></div>
+
+<header>
+  <div class="logo"><i></i>MIDNIGHT <b>FREQUENCY</b></div>
+  <button class="queue-btn" id="queueBtn">QUEUE ☰</button>
+</header>
+
+<main>
+
+  <section class="visual">
+
+    <div class="orbit a"></div>
+    <div class="orbit b"></div>
+    <div class="orbit c"></div>
+
+    <div class="disc" id="disc">
+      <div class="label">MF</div>
+    </div>
+
+    <div class="equalizer" id="equalizer"></div>
+
+  </section>
+
+  <div class="status" id="status">STANDBY</div>
+
+  <h1 id="title">Neon Dreams</h1>
+
+  <p class="artist" id="artist">Midnight Frequency</p>
+
+  <div class="seek">
+    <div class="times">
+      <span id="current">0:00</span>
+      <span id="duration">0:00</span>
+    </div>
+
+    <input id="progress" type="range" min="0" max="100" value="0">
+  </div>
+
+  <div class="controls">
+
+    <button class="small" id="shuffle" title="Shuffle">⌘</button>
+
+    <button id="previous" title="Previous">⏮</button>
+
+    <button class="play" id="play" title="Play">▶</button>
+
+    <button id="next" title="Next">⏭</button>
+
+    <button class="small" id="repeat" title="Repeat">↻</button>
+
+  </div>
+
+  <div class="volume">
+    <span>−</span>
+    <input id="volume" type="range" min="0" max="1" step=".01" value=".78">
+    <span>+</span>
+  </div>
+
+  <div class="hints">
+    SPACE PLAY/PAUSE · ← → SEEK · ↑ ↓ VOLUME
+  </div>
+
+</main>
+
+<aside class="queue" id="queue">
+
+  <div class="queue-head">
+    <div>
+      <small>YOUR SIGNAL</small>
+      <h2>Queue</h2>
+    </div>
+
+    <button class="close" id="close">×</button>
+  </div>
+
+  <div id="tracks"></div>
+
+  <div class="note">
+    <b>Make it yours.</b><br>
+    This version starts with generated demo sounds.
+    You can later add your own MP3 files.
+  </div>
+
+</aside>
+
+<script>
+
+const songs = [
+  {
+    title:"Neon Dreams",
+    artist:"Midnight Frequency",
+    type:"neon"
+  },
+  {
+    title:"Afterglow",
+    artist:"Midnight Frequency",
+    type:"after"
+  },
+  {
+    title:"Digital Rain",
+    artist:"Midnight Frequency",
+    type:"rain"
+  },
+  {
+    title:"Last Signal",
+    artist:"Midnight Frequency",
+    type:"signal"
+  }
+];
+
+const title = document.getElementById("title");
+const artist = document.getElementById("artist");
+const statusText = document.getElementById("status");
+const playButton = document.getElementById("play");
+const progress = document.getElementById("progress");
+const volume = document.getElementById("volume");
+const current = document.getElementById("current");
+const duration = document.getElementById("duration");
+const disc = document.getElementById("disc");
+const queue = document.getElementById("queue");
+const tracks = document.getElementById("tracks");
+
+let currentSong = 0;
+let playing = false;
+let shuffle = false;
+let repeat = false;
+let audioContext;
+let oscillator;
+let gain;
+let timer = null;
+let songLength = 180;
+let songTime = 0;
+
+function formatTime(seconds){
+  seconds = Math.max(0,Math.floor(seconds));
+  return Math.floor(seconds/60)+":"+String(seconds%60).padStart(2,"0");
+}
+
+function renderTracks(){
+
+  tracks.innerHTML = "";
+
+  songs.forEach((song,index)=>{
+
+    const item = document.createElement("div");
+
+    item.className =
+      "track" + (index === currentSong ? " active" : "");
+
+    item.innerHTML = `
+      <div class="cover">♫</div>
+
+      <div class="track-info">
+        <div class="track-title">${song.title}</div>
+        <div class="track-artist">${song.artist}</div>
+      </div>
+
+      <div class="track-num">
+        ${String(index+1).padStart(2,"0")}
+      </div>
+    `;
+
+    item.onclick = ()=>{
+
+      currentSong = index;
+
+      loadSong();
+
+      start();
+
+    };
+
+    tracks.appendChild(item);
+
+  });
+
+}
+
+function loadSong(){
+
+  const song = songs[currentSong];
+
+  title.textContent = song.title;
+  artist.textContent = song.artist;
+
+  songTime = 0;
+  progress.value = 0;
+
+  current.textContent = "0:00";
+  duration.textContent = formatTime(songLength);
+
+  renderTracks();
+
+}
+
+function createAudio(){
+
+  if(!audioContext){
+
+    audioContext =
+      new (window.AudioContext || window.webkitAudioContext)();
+
+  }
+
+  if(oscillator){
+
+    try{
+      oscillator.stop();
+    }catch(e){}
+
+  }
+
+  oscillator = audioContext.createOscillator();
+
+  gain = audioContext.createGain();
+
+  const frequencies = [220,277,330,196];
+
+  oscillator.frequency.value =
+    frequencies[currentSong];
+
+  oscillator.type =
+    currentSong === 1 ? "triangle" :
+    currentSong === 2 ? "square" :
+    "sine";
+
+  gain.gain.value = 0.045 * Number(volume.value);
+
+  oscillator.connect(gain);
+  gain.connect(audioContext.destination);
+
+  oscillator.start();
+
+}
+
+function start(){
+
+  if(!audioContext)
+    createAudio();
+
+  if(audioContext.state === "suspended")
+    audioContext.resume();
+
+  if(playing)
+    return;
+
+  playing = true;
+
+  createAudio();
+
+  playButton.textContent = "Ⅱ";
+  statusText.textContent = "NOW PLAYING";
+  disc.classList.add("playing");
+
+  clearInterval(timer);
+
+  timer = setInterval(()=>{
+
+    songTime += .25;
+
+    if(songTime >= songLength){
+
+      if(repeat){
+
+        songTime = 0;
+
+      }else{
+
+        nextSong();
+        return;
+
+      }
+
+    }
+
+    progress.value =
+      songTime/songLength*100;
+
+    current.textContent =
+      formatTime(songTime);
+
+  },250);
+
+}
+
+function pause(){
+
+  playing = false;
+
+  clearInterval(timer);
+
+  if(oscillator){
+
+    try{
+      oscillator.stop();
+    }catch(e){}
+
+    oscillator = null;
+
+  }
+
+  playButton.textContent = "▶";
+  statusText.textContent = "PAUSED";
+  disc.classList.remove("playing");
+
+}
+
+function nextSong(){
+
+  if(shuffle){
+
+    currentSong =
+      Math.floor(Math.random()*songs.length);
+
+  }else{
+
+    currentSong =
+      (currentSong+1)%songs.length;
+
+  }
+
+  loadSong();
+
+  if(playing){
+
+    playing = false;
+    start();
+
+  }
+
+}
+
+playButton.onclick = ()=>{
+
+  if(playing)
+    pause();
+  else
+    start();
+
+};
+
+document.getElementById("next").onclick =
+  nextSong;
+
+document.getElementById("previous").onclick = ()=>{
+
+  currentSong =
+    (currentSong-1+songs.length)%songs.length;
+
+  loadSong();
+
+  start();
+
+};
+
+document.getElementById("shuffle").onclick = function(){
+
+  shuffle = !shuffle;
+
+  this.classList.toggle("active",shuffle);
+
+};
+
+document.getElementById("repeat").onclick = function(){
+
+  repeat = !repeat;
+
+  this.classList.toggle("active",repeat);
+
+};
+
+progress.oninput = ()=>{
+
+  songTime =
+    Number(progress.value)/100*songLength;
+
+  current.textContent =
+    formatTime(songTime);
+
+};
+
+volume.oninput = ()=>{
+
+  if(gain)
+    gain.gain.value =
+      .045*Number(volume.value);
+
+};
+
+document.getElementById("queueBtn").onclick =
+  ()=>queue.classList.add("open");
+
+document.getElementById("close").onclick =
+  ()=>queue.classList.remove("open");
+
+document.addEventListener("keydown",event=>{
+
+  if(event.target.tagName === "INPUT")
+    return;
+
+  if(event.code === "Space"){
+
+    event.preventDefault();
+
+    if(playing) pause();
+    else start();
+
+  }
+
+  if(event.key === "ArrowRight"){
+
+    songTime =
+      Math.min(songLength,songTime+5);
+
+  }
+
+  if(event.key === "ArrowLeft"){
+
+    songTime =
+      Math.max(0,songTime-5);
+
+  }
+
+  if(event.key === "ArrowUp"){
+
+    event.preventDefault();
+
+    volume.value =
+      Math.min(1,Number(volume.value)+.05);
+
+    volume.dispatchEvent(new Event("input"));
+
+  }
+
+  if(event.key === "ArrowDown"){
+
+    event.preventDefault();
+
+    volume.value =
+      Math.max(0,Number(volume.value)-.05);
+
+    volume.dispatchEvent(new Event("input"));
+
+  }
+
+});
+
+for(let i=0;i<28;i++){
+
+  const bar = document.createElement("span");
+
+  document.getElementById("equalizer")
+    .appendChild(bar);
+
+}
+
+loadSong();
+
+</script>
+
+</body>
+</html>
+```
